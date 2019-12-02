@@ -1,11 +1,23 @@
 
 CC = gcc
 
-all: frame test
+SRC = crc16.c frame.c
+CFLAGS=-c -Wall
+OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRC:.c=.o)))
+BUILD_DIR = build
+TARGET = frame
 
-frame: frame.c Makefile
+all: $(TARGET) test
 
-	$(CC) -o $@ $<
+$(TARGET): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-test: frame
-	./frame
+$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)
+	@echo ---$@
+	$(CC) $(CFLAGS) $< -o $@
+
+test: $(TARGET)
+	./$(TARGET)
+
+$(BUILD_DIR):
+	mkdir -p $@
