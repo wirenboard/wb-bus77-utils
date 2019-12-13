@@ -1,7 +1,7 @@
 
 CC = gcc
 
-SRC = crc16.c frame.c
+SRC = $(wildcard *.c)
 CFLAGS=-c -Wall
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRC:.c=.o)))
 BUILD_DIR = build
