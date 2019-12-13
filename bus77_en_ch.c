@@ -1,5 +1,5 @@
 #include "bus77_en_ch.h"
-
+#include "can_bus.h"
 #include "nmisc.h"
 #include "crc16.h"
 
@@ -29,20 +29,29 @@ void bus77_send(uint8_t * buf, uint8_t len)
 	header->n_msg = 3;
 	header->data_len = len;
 
-	uint8_t msg_len = sizeof(B77Header) + len - 3; 
 
-	header->len = msg_len;
+	uint8_t msg_len = sizeof(B77Header) + len; 
+	header->len = msg_len - 3;
 
 	for (uint16_t i = 0; i < len; i++) {
 		b77_buf[sizeof(B77Header) + i] = buf[i];
 	}
 	
-	uint16_t crc = crc16_modbus(b77_buf + 5, sizeof(B77Header) + len - 5);
+	uint16_t crc = crc16_modbus(b77_buf + 5, msg_len - 5);
 
-	b77_buf[sizeof(B77Header) + len + 0] = crc;
-	b77_buf[sizeof(B77Header) + len + 1] = crc >> 8;
-	
-	printf("BUS 77 Frame: ");
-	dp_hb8(b77_buf, sizeof(B77Header) + len + 2);
-	printf("\r\n");
+	b77_buf[msg_len + 0] = crc;
+	b77_buf[msg_len + 1] = crc >> 8;
+
+	msg_len += 2;
+
+	uint8_t index = 0;
+	while (index < (msg_len - 8)) {
+		can_bus_send(0x19999002, &(b77_buf[index]), 8);
+		index += 8;
+	}
+	can_bus_send(0x19999003, &(b77_buf[index]), msg_len - index);
+
+	// printf("BUS 77 Frame: ");
+	// dp_hb8(b77_buf, sizeof(B77Header) + len + 2);
+	// printf("\r\n");
 }
