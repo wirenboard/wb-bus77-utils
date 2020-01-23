@@ -25,8 +25,9 @@ int main(void)
 {
 	printf("Hey bitch!\r\n");
 
-	printf("Data to write: ");
-	dp_hb16(reg_to_write, 5);
+	can_bus_init("can0");
+	// printf("Data to write: ");
+	// dp_hb16(reg_to_write, 5);
 
 	// u8 len = modbus_write_multiple_regs(41, 0x61, reg_to_write, 2);
 	u8 len = modbus_read_regs(41, 0x80, 1);
