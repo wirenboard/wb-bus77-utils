@@ -13,10 +13,11 @@
 
 
 uint8_t modbus_buf[256];
-uint16_t read_regs_count;
+uint16_t regs_count;
 
 uint8_t modbus_write_single_coil(uint8_t id, uint16_t addr, uint16_t val)
 {
+	regs_count = 1;
 	if (val) {
 		val = 0xFF00;
 	}
@@ -35,27 +36,29 @@ uint8_t modbus_write_single_coil(uint8_t id, uint16_t addr, uint16_t val)
 
 uint8_t modbus_write_multiple_coil(uint8_t id, uint16_t addr, uint16_t * buf, uint8_t regs_amount)
 {
+	regs_count = regs_amount;
 	modbus_buf[0] = id;
 	modbus_buf[1] = MODBUS_CMD_WRITE_MULTIPLE_COIL;
 	modbus_buf[2] = addr >> 8;
 	modbus_buf[3] = addr;
 	modbus_buf[4] = regs_amount >> 8;
 	modbus_buf[5] = regs_amount;
-	modbus_buf[6] = regs_amount * 2;
 
-	uint8_t len = 7;
+	uint16_t bytes = 0;
+
 
 	for (uint8_t i = 0; i < regs_amount; i++) {
 		if ((i % 8) == 0) {
-			len++;
-			modbus_buf[len + (i / 8)] = 0;
+			bytes++;
+			modbus_buf[7 + (i / 8)] = 0;
 		}
 		u8 mask = 1 << (i % 8);
 		if (buf[i]) {
-			modbus_buf[len + (i / 8)] |= mask;
+			modbus_buf[7 + (i / 8)] |= mask;
 		}
 	}
-	len++;
+	modbus_buf[6] = bytes;
+	uint8_t len = 7 + bytes;
 
 	uint16_t crc = crc16_modbus(modbus_buf, len);
 	modbus_buf[len++] = crc;
@@ -65,6 +68,7 @@ uint8_t modbus_write_multiple_coil(uint8_t id, uint16_t addr, uint16_t * buf, ui
 
 uint8_t modbus_write_single_reg(uint8_t id, uint16_t addr, uint16_t val)
 {
+	regs_count = 1;
 	modbus_buf[0] = id;
 	modbus_buf[1] = MODBUS_CMD_WRITE_SIGLE_REGISTER;
 	modbus_buf[2] = addr >> 8;
@@ -80,6 +84,7 @@ uint8_t modbus_write_single_reg(uint8_t id, uint16_t addr, uint16_t val)
 
 uint8_t modbus_write_multiple_regs(uint8_t id, uint16_t addr, uint16_t * buf, uint8_t regs_amount)
 {
+	regs_count = regs_amount;
 	modbus_buf[0] = id;
 	modbus_buf[1] = MODBUS_CMD_WRITE_MULTIPLE_REGISTER;
 	modbus_buf[2] = addr >> 8;
@@ -100,15 +105,15 @@ uint8_t modbus_write_multiple_regs(uint8_t id, uint16_t addr, uint16_t * buf, ui
 	return len;
 }
 
-uint8_t modbus_read_regs(uint8_t id, uint8_t cmd, uint16_t addr, uint16_t n_regs)
+uint8_t modbus_read_regs(uint8_t id, uint8_t cmd, uint16_t addr, uint16_t regs_amount)
 {
-	read_regs_count = n_regs;
+	regs_count = regs_amount;
 	modbus_buf[0] = id;
 	modbus_buf[1] = cmd;
 	modbus_buf[2] = addr >> 8;
 	modbus_buf[3] = addr;
-	modbus_buf[4] = n_regs >> 8;
-	modbus_buf[5] = n_regs;
+	modbus_buf[4] = regs_amount >> 8;
+	modbus_buf[5] = regs_amount;
 	uint8_t len = 6;
 	uint16_t crc = crc16_modbus(modbus_buf, len);
 	modbus_buf[len++] = crc;
@@ -153,14 +158,13 @@ uint8_t modbus_parse_answer(uint16_t len)
 	case MODBUS_CMD_WRITE_SIGLE_REGISTER:
 	case MODBUS_CMD_WRITE_MULTIPLE_COIL:
 	case MODBUS_CMD_WRITE_MULTIPLE_REGISTER:
-		val = *(uint16_t*)(&modbus_buf[4]);
-		printf("written %d elements!\n", val);
+		printf("written %d elements!\n", regs_count);
 		break;
 	case MODBUS_CMD_READ_COILS:
 	case MODBUS_CMD_READ_DISCRETE_INPUTS:
-		printf("read elements: %d\n", read_regs_count);
+		printf("read elements: %d\n", regs_count);
 		printf("\tData: ");
-		for (size_t i = 0; i < read_regs_count; i++) {
+		for (size_t i = 0; i < regs_count; i++) {
 			if ((modbus_buf[3  + (i / 8)]) & (1 << (i % 8))) {
 				printf("1 ");
 			} else {
@@ -171,8 +175,8 @@ uint8_t modbus_parse_answer(uint16_t len)
 		break;
 	case MODBUS_CMD_READ_HOLDING_REGISTERS:
 	case MODBUS_CMD_READ_INPUT_REGISTERS:
-		printf("read elements:\n", *(uint16_t*)(&modbus_buf[4]));
-		printf("\tData: ", *(uint16_t*)(&modbus_buf[4]));
+		printf("read elements: %d\n", regs_count);
+		printf("\tData: ");
 		for (size_t i = 0; i < modbus_buf[2] / 2; i++) {
 			val = modbus_get_word(3 + (2 * i));
 			printf("0x");
