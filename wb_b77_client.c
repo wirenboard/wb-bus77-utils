@@ -2,8 +2,8 @@
 #include <getopt.h>
 #include "nmisc.h"
 #include "can_bus.h"
-#include "modbus.h"
 #include "bus77_en_ch.h"
+#include "modbus_frame.h"
 
 uint8_t modbus_buffer[256];
 
