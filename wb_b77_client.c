@@ -5,6 +5,7 @@
 #include "modbus.h"
 #include "bus77_en_ch.h"
 
+uint8_t modbus_buffer[256];
 
 int main(int argc, char *argv[])
 {
@@ -55,46 +56,34 @@ int main(int argc, char *argv[])
         }
     }
 
-    uint16_t vals[128];
+    uint16_t vals[128] = {};
     int vals_amount = 0;
     for (size_t i = optind; i < argc; i++) {
         sscanf(argv[i], "%d", &vals[vals_amount]);
         vals_amount++;
     }
 
-    printf("args %d\n", vals_amount);
-    dp_hb16(vals, vals_amount);
-
-    // printf("\nParsed: dev: %s, id: %d, func: %d, addr: %d, count: %d\n", device, modbus_id, modbus_func, modbus_reg, modbus_amount);
-
     can_bus_init(device);
 
     printf("[open channel]\n");
     bus77_open_channel();
 
-    int len;
-    switch (modbus_func) {
-    case MODBUS_CMD_READ_COILS: len = modbus_read_regs(modbus_id, MODBUS_CMD_READ_COILS, modbus_reg, modbus_amount); break;
-    case MODBUS_CMD_READ_DISCRETE_INPUTS: len = modbus_read_regs(modbus_id, MODBUS_CMD_READ_DISCRETE_INPUTS, modbus_reg, modbus_amount); break;
-    case MODBUS_CMD_READ_HOLDING_REGISTERS: len = modbus_read_regs(modbus_id, MODBUS_CMD_READ_HOLDING_REGISTERS, modbus_reg, modbus_amount); break;
-    case MODBUS_CMD_READ_INPUT_REGISTERS: len = modbus_read_regs(modbus_id, MODBUS_CMD_READ_INPUT_REGISTERS, modbus_reg, modbus_amount); break;
-    case MODBUS_CMD_WRITE_SINGLE_COIL: len = modbus_write_single_coil(modbus_id, modbus_reg, vals[0]); break;
-    case MODBUS_CMD_WRITE_SIGLE_REGISTER: len = modbus_write_single_reg(modbus_id, modbus_reg, vals[0]); break;
-    case MODBUS_CMD_WRITE_MULTIPLE_COIL: len = modbus_write_multiple_coil(modbus_id, modbus_reg, vals, vals_amount); break;
-    case MODBUS_CMD_WRITE_MULTIPLE_REGISTER: len = modbus_write_multiple_regs(modbus_id, modbus_reg, vals, vals_amount); break;
-    default:
+    int len = modbus_make_frame(modbus_id, modbus_func, modbus_reg, vals, modbus_amount, modbus_buffer);
+    if (len == 0) {
         printf("Wrong modbus function\n");
         return 1;
-        break;
     }
 
-    bus77_send_modbus_frame(modbus_buf, len);
-
-    len = bus77_recieve_modbus_frame(modbus_buf);
-    printf("modbus frame: ");
-    dp_hb8(modbus_buf, len);
+    printf("modbus frame > : ");
+    dp_hb8(modbus_buffer, len);
     putchar('\n');
-    modbus_parse_answer(len);
+    bus77_send_modbus_frame(modbus_buffer, len);
+
+    len = bus77_recieve_modbus_frame(modbus_buffer);
+    printf("modbus frame < : ");
+    dp_hb8(modbus_buffer, len);
+    putchar('\n');
+    modbus_parse_answer(modbus_buffer, len);
 
     printf("[close channel]\n");
     bus77_close_channel();
