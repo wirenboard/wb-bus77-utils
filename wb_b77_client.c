@@ -80,6 +80,10 @@ int main(int argc, char *argv[])
     bus77_send_modbus_frame(modbus_buffer, len);
 
     len = bus77_recieve_modbus_frame(modbus_buffer);
+    if (len == 0) {
+        printf("ERROR occured!\n");
+        return 1;
+    }
     printf("modbus frame < : ");
     dp_hb8(modbus_buffer, len);
     putchar('\n');

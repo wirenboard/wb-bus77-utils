@@ -2,6 +2,7 @@
 #include "can_bus.h"
 #include "nmisc.h"
 #include "crc16.h"
+#include <sys/time.h>
 
 #define FRAME_TYPE_MODBUS_GATEWAY			0x5111
 #define FRAME_TYPE_CHANNEL_CLOSE 			0x5210
@@ -34,10 +35,11 @@ static void bus77_send_frame(uint32_t id, uint8_t * data, uint16_t len)
 	dp_hb8(data, len);
 	putchar('\n');
 
-	uint8_t index = 0;
+	uint16_t index = 0;
 	while (index < (len - 8)) {
 		can_bus_send(id, data + index, 8);
 		index += 8;
+		usleep(5 * 1000);
 	}
 	can_bus_send(id | 1, data + index, len - index);
 }
@@ -112,6 +114,7 @@ uint16_t bus77_recieve_modbus_frame(uint8_t * data)
 {
 	uint32_t id = 0;
 	uint16_t len = 0;
+	uint16_t timeout = 200;		// 2s
 
 	while (1) {
 		len = bus77_recieve_frame(&id, b77_buf);
@@ -121,12 +124,17 @@ uint16_t bus77_recieve_modbus_frame(uint8_t * data)
 			dp_hb8(b77_buf, len);
 			putchar('\n');
 
-
 			if (header->type == FRAME_TYPE_MODBUS_GATEWAY) {
 				for (size_t i = 0; i < header->data_len; i++) {
 					data[i] = b77_buf[B77_HEADER_SIZE + i];
 				}
 				return header->data_len;
+			}
+		} else {
+			if (timeout) {
+				timeout--;
+			} else {
+				return 0;
 			}
 		}
 	}
