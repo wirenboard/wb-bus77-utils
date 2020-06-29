@@ -19,7 +19,7 @@ static void print_frame(struct can_frame * f)
     dp_hb8(f->data, f->can_dlc);
 }
 
-void can_bus_init(char * port_name)
+int can_bus_init(char * port_name)
 {
     struct sockaddr_can addr;
     struct ifreq ifr;
@@ -32,13 +32,15 @@ void can_bus_init(char * port_name)
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    bind(s, (struct sockaddr *)&addr, sizeof(addr));
-    // fcntl(socket, F_SETFL, O_NONBLOCK);
+    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+        return 1;
+    }
 
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 10000;
     setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    return 0;
 }
 
 void can_bus_send(uint32_t id, uint8_t * data, uint8_t len)
