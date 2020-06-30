@@ -23,7 +23,7 @@ typedef struct __attribute__((__packed__)) {
 
 #define B77_HEADER_SIZE	(sizeof(B77Header))
 
-static uint8_t b77_buf[256 + B77_HEADER_SIZE + 2];
+static uint8_t b77_buf[256 + B77_HEADER_SIZE + 2 + 10];
 static uint16_t b77_frame_msg_n = 0;
 static uint16_t b77_frame_block_n = 0;
 static uint8_t b77_frame_flow = 100;
