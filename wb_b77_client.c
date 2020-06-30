@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <getopt.h>
-#include "nmisc.h"
+#include "debug_print.h"
 #include "can_bus.h"
 #include "bus77_en_ch.h"
 #include "modbus_frame.h"

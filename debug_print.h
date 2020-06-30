@@ -1,5 +1,5 @@
-#ifndef NMISC_H
-#define NMISC_H
+#ifndef DEBUG_PRINT_H
+#define DEBUG_PRINT_H
 
 
 #include <stdint.h>

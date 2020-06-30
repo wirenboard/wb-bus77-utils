@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
-#include "nmisc.h"
+#include "debug_print.h"
 
 #include "modbus_frame.h"
 #include "can_bus.h"

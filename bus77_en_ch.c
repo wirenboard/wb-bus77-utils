@@ -1,6 +1,6 @@
 #include "bus77_en_ch.h"
 #include "can_bus.h"
-#include "nmisc.h"
+#include "debug_print.h"
 #include "crc16.h"
 #include <sys/time.h>
 
