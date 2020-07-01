@@ -9,12 +9,12 @@ CFLAGS = -Wall
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRC:.c=.o)))
 BUILD_DIR = build
 
-all: ./wb_b77_client ./wb_b77_flasher send
+all: wb-bus77-modbus-client wb-bus77-mcu-fw-flasher
 
-wb_b77_client: $(BUILD_DIR)/wb_b77_client.o $(OBJECTS)
+wb-bus77-modbus-client: $(BUILD_DIR)/wb_b77_client.o $(OBJECTS)
 	$(TPATH)$(TOOLCHAIN)$(CC) $(CFLAGS) $(OBJECTS) $(BUILD_DIR)/wb_b77_client.o -o $@
 
-wb_b77_flasher: $(BUILD_DIR)/wb_b77_flasher.o $(OBJECTS)
+wb-bus77-mcu-fw-flasher: $(BUILD_DIR)/wb_b77_flasher.o $(OBJECTS)
 	$(TPATH)$(TOOLCHAIN)$(CC) $(CFLAGS) $(OBJECTS) $(BUILD_DIR)/wb_b77_flasher.o -o $@
 
 $(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)
@@ -23,6 +23,3 @@ $(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)
 
 $(BUILD_DIR):
 	mkdir -p $@
-
-send: wb_b77_client wb_b77_flasher
-	scp $^ root@$(wb6):

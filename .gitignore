@@ -1,4 +1,4 @@
 frame
 build/
-wb_b77_client
-wb_b77_flasher
+wb-bus77-modbus-client
+wb-bus77-mcu-fw-flasher
