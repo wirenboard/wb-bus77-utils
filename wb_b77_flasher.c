@@ -105,11 +105,11 @@ void close_channel_end_exit(int exitcode)
 
 int main(int argc, char *argv[])
 {
-    if (argc == 1) {
-        printf("Welcome to Wiren Board flash tool.\n");
-        printf("Version: " xstr(VERSION) " for bus 77 wirenboard devices\n\n");
-        printf("Usage:\n\n");
+    printf("Welcome to Wiren Board flash tool.\n");
+    printf("Version: " VERSION " for bus 77 wirenboard devices\n");
 
+    if (argc == 1) {
+        printf("\nUsage:\n\n");
         printf("Param  Description                                         Default value\n\n");
         printf("-d     Serial port (e.g. \"can0\")                                 -\n");
         printf("-f     Firmware file                                             -\n");

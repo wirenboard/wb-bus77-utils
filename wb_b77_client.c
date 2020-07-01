@@ -9,9 +9,10 @@ uint8_t modbus_buffer[256];
 
 int main(int argc, char *argv[])
 {
+    printf("Welcome to Wiren Board bus77-modbus client.\nVersion: " VERSION "\n");
+
     if (argc == 1) {
         printf(
-            "Welcome to Wiren Board bus77-modbus client\n"
             "   -d   can device (default can0)\n"
             "   -D   debug level (0) none, (1) modbus, (2) modbus + bus77)\n"
             "   -a   modbus slave addr (default 1)\n"
