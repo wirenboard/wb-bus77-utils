@@ -97,6 +97,12 @@ int iridium_can_modbus_write_registers(uint8_t id, uint16_t addr, uint16_t nreg,
     return 1;
 }
 
+void close_channel_end_exit(int exitcode)
+{
+    bus77_close_channel();
+    exit(exitcode);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc == 1) {
@@ -237,7 +243,7 @@ int main(int argc, char *argv[])
 			inBootloader = 1;
 		} else {
 			fprintf(stderr, "Device probably doesn't support in-field firmware upgrade\n");
-			exit(EXIT_FAILURE);
+			close_channel_end_exit(EXIT_FAILURE);
 		}
 		sleep(2);    // wait 2 seconds
 	}
@@ -272,7 +278,7 @@ int main(int argc, char *argv[])
     FILE *file = fopen(fileName, "rb");
     if (file == NULL) {
         fprintf(stderr, "Error while opening firmware file: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        close_channel_end_exit(EXIT_FAILURE);
     }
 
     fseek(file, 0L, SEEK_END);
@@ -315,7 +321,7 @@ int main(int argc, char *argv[])
             filePointer += DATA_BLOCK_SIZE;
             errorCount = 0;
         } else {
-			exit(EXIT_FAILURE);
+			close_channel_end_exit(EXIT_FAILURE);
         }
     }
 
