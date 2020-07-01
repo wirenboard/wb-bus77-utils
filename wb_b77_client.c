@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
         printf(
             "Welcome to Wiren Board bus77-modbus client\n"
             "   -d   can device (default can0)\n"
+            "   -D   debug level (0) none, (1) modbus, (2) modbus + bus77)\n"
             "   -a   modbus slave addr (default 1)\n"
             "   -t   modbus function\n"
             "        (1) Read Coils, (2) Read Discrete Inputs, (5) Write Single Coil\n"
@@ -30,14 +31,18 @@ int main(int argc, char *argv[])
     int modbus_func = 3;
     int modbus_reg = 128;
     int modbus_amount = 1;
+    int debug_level = 0;
 
     int c;
     int args_amount = 1;
-    while ((c = getopt(argc, argv, "d:a:t:r:c:")) != -1) {
+    while ((c = getopt(argc, argv, "d:a:t:r:c:D:")) != -1) {
         args_amount += 2;
         switch (c) {
         case 'd':
             device = optarg;
+            break;
+        case 'D':
+            sscanf(optarg, "%d", &debug_level);
             break;
         case 'a':
             sscanf(optarg, "%d", &modbus_id);
@@ -64,8 +69,10 @@ int main(int argc, char *argv[])
     }
 
     can_bus_init(device);
+    if (debug_level > 1) {
+        bus77_set_debug_level(1);
+    }
 
-    printf("[open channel]\n");
     bus77_open_channel();
 
     int len = modbus_make_frame(modbus_id, modbus_func, modbus_reg, vals, modbus_amount, modbus_buffer);
@@ -74,9 +81,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    printf("modbus frame > : ");
-    dp_hb8(modbus_buffer, len);
-    putchar('\n');
+    if (debug_level > 0) {
+        printf("modbus frame > : ");
+        dp_hb8(modbus_buffer, len);
+        putchar('\n');
+    }
     bus77_send_modbus_frame(modbus_buffer, len);
 
     len = bus77_recieve_modbus_frame(modbus_buffer);
@@ -84,12 +93,13 @@ int main(int argc, char *argv[])
         printf("ERROR occured!\n");
         return 1;
     }
-    printf("modbus frame < : ");
-    dp_hb8(modbus_buffer, len);
-    putchar('\n');
+    if (debug_level > 0) {
+        printf("modbus frame < : ");
+        dp_hb8(modbus_buffer, len);
+        putchar('\n');
+    }
     modbus_parse_answer(modbus_buffer, len);
 
-    printf("[close channel]\n");
     bus77_close_channel();
 
     return 0;
