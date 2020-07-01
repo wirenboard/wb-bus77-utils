@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
     char * device = "can0";
     int modbus_id = 1;
-    int modbus_func = 3;
+    int modbus_func = MODBUS_CMD_READ_HOLDING_REGISTERS;
     int modbus_reg = 128;
     int modbus_amount = 1;
     int debug_level = 0;
@@ -66,6 +66,9 @@ int main(int argc, char *argv[])
     for (size_t i = optind; i < argc; i++) {
         sscanf(argv[i], "%d", &vals[vals_amount]);
         vals_amount++;
+    }
+    if (modbus_func == MODBUS_CMD_WRITE_MULTIPLE_COIL || modbus_func == MODBUS_CMD_WRITE_MULTIPLE_REGISTER) {
+        modbus_amount = vals_amount;
     }
 
     can_bus_init(device);
