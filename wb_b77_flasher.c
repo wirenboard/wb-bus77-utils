@@ -46,12 +46,23 @@ int ensureCharIn(char param, const char array[], unsigned int arrayLen);
 
 int mode_iridium_can = 0;
 uint8_t iridium_mb_frame[280];
+int debug_level = 0;
 
 int iridium_can_modbus_write_register(uint8_t id, uint16_t addr, uint16_t val)
 {
     int len = modbus_make_frame(id, MODBUS_CMD_WRITE_SINGLE_REGISTER, addr, &val, 1, iridium_mb_frame);
+    if (debug_level > 0) {
+        printf("modbus frame > : ");
+        dp_hb8(iridium_mb_frame, len);
+        putchar('\n');
+    }
     bus77_send_modbus_frame(iridium_mb_frame, len);
     len = bus77_recieve_modbus_frame(iridium_mb_frame);
+    if (debug_level > 0) {
+        printf("modbus frame < : ");
+        dp_hb8(iridium_mb_frame, len);
+        putchar('\n');
+    }
     if (modbus_check_crc(iridium_mb_frame, len) == 0) {
         return 0;
     }
@@ -64,15 +75,19 @@ int iridium_can_modbus_write_register(uint8_t id, uint16_t addr, uint16_t val)
 int iridium_can_modbus_write_registers(uint8_t id, uint16_t addr, uint16_t nreg, uint16_t * vals)
 {
 	int len = modbus_make_frame(id, MODBUS_CMD_WRITE_MULTIPLE_REGISTER, addr, vals, nreg, iridium_mb_frame);
-	printf("modbus frame > : ");
-    dp_hb8(iridium_mb_frame, len);
-    putchar('\n');
+	if (debug_level > 0) {
+        printf("modbus frame > : ");
+        dp_hb8(iridium_mb_frame, len);
+        putchar('\n');
+    }
 
 	bus77_send_modbus_frame(iridium_mb_frame, len);
     len = bus77_recieve_modbus_frame(iridium_mb_frame);
-	printf("modbus frame < : ");
-    dp_hb8(iridium_mb_frame, len);
-    putchar('\n');
+    if (debug_level > 0) {
+        printf("modbus frame < : ");
+        dp_hb8(iridium_mb_frame, len);
+        putchar('\n');
+    }
     if (modbus_check_crc(iridium_mb_frame, len) == 0) {
         return 0;
     }
@@ -90,7 +105,7 @@ int main(int argc, char *argv[])
         printf("Usage:\n\n");
 
         printf("Param  Description                                         Default value\n\n");
-        printf("-d     Serial port (e.g. \"/dev/ttyRS485-1\")                      -\n");
+        printf("-d     Serial port (e.g. \"can0\")                                 -\n");
         printf("-f     Firmware file                                             -\n");
         printf("-a     Modbus ID (slave addr)                                    1\n");
         printf("-j     Send jump to bootloader command                           -\n");
@@ -130,11 +145,10 @@ int main(int argc, char *argv[])
     int   uartResetCmd = 0;
     int   eepromFormatCmd = 0;
     int   jumpReg  = HOLD_REG_JUMP_TO_BOOTLOADER;
-    int   debug    = 0;
     int   inBootloader = 0;
 
     int c;
-    while ((c = getopt(argc, argv, "d:f:a:juer:Db:p:s:B:")) != -1) {
+    while ((c = getopt(argc, argv, "d:f:a:juer:D:b:p:s:B:")) != -1) {
         switch (c) {
         case 'd':
             device = optarg;
@@ -158,7 +172,7 @@ int main(int argc, char *argv[])
             sscanf(optarg, "%d", &jumpReg);
             break;
         case 'D':
-            debug = 1;
+            sscanf(optarg, "%d", &debug_level);
             break;
         case 'b':
             sscanf(optarg, "%d", &deviceParams.baudrate);
@@ -208,6 +222,10 @@ int main(int argc, char *argv[])
 	// 	printf("This flasher only for bus 77 wirenboard devices");
 	// 	return 1;
 	// }
+
+    if (debug_level > 1) {
+        bus77_set_debug_level(1);
+    }
 
 	can_bus_init(device);
 	bus77_open_channel();
