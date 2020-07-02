@@ -102,9 +102,12 @@ int main(int argc, char *argv[])
         dp_hb8(modbus_buffer, len);
         putchar('\n');
     }
-    modbus_parse_answer(modbus_buffer, len);
+    int answ = modbus_parse_answer(modbus_buffer, len);
 
     bus77_close_channel();
 
+    if (answ == 0) {
+        return 1;
+    }
     return 0;
 }
