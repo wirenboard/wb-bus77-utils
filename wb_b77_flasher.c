@@ -58,6 +58,9 @@ int iridium_can_modbus_write_register(uint8_t id, uint16_t addr, uint16_t val)
     }
     bus77_send_modbus_frame(iridium_mb_frame, len);
     len = bus77_recieve_modbus_frame(iridium_mb_frame);
+    if (len == 0) {
+        return 0;
+    }
     if (debug_level > 0) {
         printf("modbus frame < : ");
         dp_hb8(iridium_mb_frame, len);
@@ -83,6 +86,9 @@ int iridium_can_modbus_write_registers(uint8_t id, uint16_t addr, uint16_t nreg,
 
 	bus77_send_modbus_frame(iridium_mb_frame, len);
     len = bus77_recieve_modbus_frame(iridium_mb_frame);
+    if (len == 0) {
+        return 0;
+    }
     if (debug_level > 0) {
         printf("modbus frame < : ");
         dp_hb8(iridium_mb_frame, len);
@@ -306,9 +312,14 @@ int main(int argc, char *argv[])
         if (iridium_can_modbus_write_registers(modbusID, INFO_BLOCK_REG_ADDRESS, INFO_BLOCK_SIZE / 2, &data[filePointer / 2])) {
             printf(" OK\n");
             filePointer += INFO_BLOCK_SIZE;
-           break;
-       }
-		return 1;
+            break;
+        } else {
+            errorCount++;
+        }
+    }
+    if (errorCount >= MAX_ERROR_COUNT) {
+        printf(" no answer from device\n");
+		close_channel_end_exit(EXIT_FAILURE);
     }
 
     printf("\n");
