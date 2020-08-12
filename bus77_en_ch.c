@@ -126,6 +126,40 @@ void bus77_send_modbus_frame(uint8_t * data, uint16_t len)
 	bus77_send_frame(0x19999002, b77_buf, msg_len);
 }
 
+
+static void bus77_insert_crc(uint8_t * buf, uint16_t len)
+{
+	uint16_t crc = crc16_modbus(buf + 5, len - 5);
+	buf[len + 0] = crc;
+	buf[len + 1] = crc >> 8;
+}
+
+void bus77_set_modbus_baud(int baud)
+{
+	if (b77_debug_level) {
+		printf("[change modbus bridge port baud to %d]\n", baud);
+	}
+
+	uint8_t buf1[] = {0x7D, 0x08, 0x0D, 0x00, 0x01, 0x11, 0x33, 0x46, 0x00, 0x02, 0x00, 0x00, 0x20, 0x85, 0x80, 0x04, 0xE5, 0xA1};
+	switch (baud) {
+	case 9600:
+		buf1[15] = 0;
+		buf1[14] = 96;
+		break;
+
+	default:
+		break;
+	}
+	bus77_insert_crc(buf1, 16);
+	bus77_send_frame(0x19999002, buf1, sizeof(buf1));
+
+	if (b77_debug_level) {
+		printf("[confirm change modbus bridge port baud]\n");
+	}
+	uint8_t buf2[] = {0x7D, 0x08, 0x0B, 0x00, 0x01, 0x11, 0x33, 0x49, 0x00, 0x05, 0x00, 0x00, 0xC0, 0x81, 0x0D, 0x05};
+	bus77_send_frame(0x19999002, buf2, sizeof(buf2));
+}
+
 uint16_t bus77_recieve_modbus_frame(uint8_t * data)
 {
 	uint32_t id = 0;
