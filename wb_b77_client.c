@@ -29,14 +29,15 @@ int main(int argc, char *argv[])
 
     char * device = "can0";
     int modbus_id = 1;
-    int modbus_func = MODBUS_CMD_READ_HOLDING_REGISTERS;
+    int modbus_func = 0;
     int modbus_reg = 128;
     int modbus_amount = 1;
     int debug_level = 0;
+    int modbus_baud = 0;
 
     int c;
     int args_amount = 1;
-    while ((c = getopt(argc, argv, "d:a:t:r:c:D:")) != -1) {
+    while ((c = getopt(argc, argv, "d:a:t:r:c:D:b:")) != -1) {
         args_amount += 2;
         switch (c) {
         case 'd':
@@ -56,6 +57,9 @@ int main(int argc, char *argv[])
             break;
         case 'c':
             sscanf(optarg, "%d", &modbus_amount);
+            break;
+        case 'b':
+            sscanf(optarg, "%d", &modbus_baud);
             break;
         default:
             break;
@@ -80,9 +84,13 @@ int main(int argc, char *argv[])
     bus77_open_channel();
 
     int len = modbus_make_frame(modbus_id, modbus_func, modbus_reg, vals, modbus_amount, modbus_buffer);
-    if (len == 0) {
-        printf("Wrong modbus function\n");
-        return 1;
+    if (modbus_baud) {
+        bus77_set_modbus_baud(modbus_baud);
+    } else {
+        if (len == 0) {
+            printf("Wrong modbus function\n");
+            return 1;
+        }
     }
 
     if (debug_level > 0) {
@@ -90,24 +98,27 @@ int main(int argc, char *argv[])
         dp_hb8(modbus_buffer, len);
         putchar('\n');
     }
-    bus77_send_modbus_frame(modbus_buffer, len);
+    if (len) {
+        bus77_send_modbus_frame(modbus_buffer, len);
+        len = bus77_recieve_modbus_frame(modbus_buffer);
+        if (len == 0) {
+            printf("ERROR occured!\n");
+            bus77_close_channel();
+            return 1;
+        }
+        if (debug_level > 0) {
+            printf("modbus frame < : ");
+            dp_hb8(modbus_buffer, len);
+            putchar('\n');
+        }
+        int answ = modbus_parse_answer(modbus_buffer, len);
 
-    len = bus77_recieve_modbus_frame(modbus_buffer);
-    if (len == 0) {
-        printf("ERROR occured!\n");
-        return 1;
-    }
-    if (debug_level > 0) {
-        printf("modbus frame < : ");
-        dp_hb8(modbus_buffer, len);
-        putchar('\n');
-    }
-    int answ = modbus_parse_answer(modbus_buffer, len);
+        bus77_close_channel();
 
-    bus77_close_channel();
-
-    if (answ == 0) {
-        return 1;
+        if (answ == 0) {
+            return 1;
+        }
     }
+
     return 0;
 }

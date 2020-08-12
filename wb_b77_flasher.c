@@ -136,14 +136,14 @@ int main(int argc, char *argv[])
     };
 
     struct UartSettings bootloaderParams = { //Bootloader has fast flash mode with high baudrate
-        .baudrate = 9600,
+        .baudrate = 0,
         .parity = 'N',
         .databits = 8,
         .stopbits = 2
     };
 
     struct UartSettings deviceParams = { //To send -j to device. Filled from user input
-        .baudrate = 9600,
+        .baudrate = 0,
         .parity = 'N',
         .databits = 8,
         .stopbits = 2
@@ -243,6 +243,9 @@ int main(int argc, char *argv[])
 	bus77_open_channel();
 
 	if (jumpCmd) {
+        if (deviceParams.baudrate) {
+            bus77_set_modbus_baud(deviceParams.baudrate);
+        }
 		printf("Send jump to bootloader command and wait 2 seconds...\n");
 		if (iridium_can_modbus_write_register(modbusID, jumpReg, 1)) {
 			printf("Ok, device will jump to bootloader.\n");
@@ -253,6 +256,10 @@ int main(int argc, char *argv[])
 		}
 		sleep(2);    // wait 2 seconds
 	}
+
+    if (bootloaderParams.baudrate) {
+        bus77_set_modbus_baud(bootloaderParams.baudrate);
+    }
 
     if (uartResetCmd) {
         printf("Send reset UART settings and modbus address command...\n");
